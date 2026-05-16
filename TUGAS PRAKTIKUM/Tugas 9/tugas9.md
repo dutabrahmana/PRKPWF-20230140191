@@ -1,7 +1,7 @@
 # Modul Pertemuan 9: API CRUD
 
-**Nama:** Hikmatyar Alghifary  
-**NIM:** 20230140193  
+**Nama:** Duta Brahmana Nusantara 
+**NIM:** 20230140191 
 **Mata Kuliah:** Praktikum Pemrograman Web Framework
 
 Dokumentasi berikut menunjukkan hasil pengujian API untuk Kategori dan Produk menggunakan Postman/Scramble.

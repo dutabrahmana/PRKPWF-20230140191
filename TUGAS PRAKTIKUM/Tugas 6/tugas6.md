@@ -1,7 +1,7 @@
 # Modul Pertemuan 6: Validasi Data (Validation)
 
-**Nama:** Hikmatyar Alghifary  
-**NIM:** 20230140193  
+**Nama:** Duta Brahmana Nusantara 
+**NIM:** 20230140191  
 **Mata Kuliah:** Praktikum Pemrograman Web Framework
 
 ---

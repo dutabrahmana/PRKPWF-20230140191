@@ -1,7 +1,7 @@
 # Laporan Tugas Praktikum - Modul 3: ERD, Model, dan Migration
 
-**Nama:** Hikmatyar Alghifary  
-**NIM:** 20230140193  
+**Nama:** Duta Brahmana Nusantara 
+**NIM:** 20230140191  
 **Mata Kuliah:** Praktikum Pemrograman Web Framework
 
 ---
