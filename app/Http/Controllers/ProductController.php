@@ -1,0 +1,172 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use App\Models\User;
+use App\Models\Category;
+use Illuminate\Http\Request;
+use App\Http\Requests\UpdateProductRequest;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+
+class ProductController extends Controller
+{
+    public function index()
+    {
+        $products = Product::all();
+
+        return view('product.index', compact('products'));
+    }
+
+    public function export()
+    {
+        $products = Product::with('user')->get();
+        $fileName = 'products_export_' . date('Y-m-d_H-i-s') . '.csv';
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function () use ($products) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['ID', 'Product Name', 'Quantity', 'Price (Rp)', 'Owner', 'Created At']);
+
+            foreach ($products as $product) {
+                fputcsv($file, [
+                    $product->id,
+                    $product->name,
+                    $product->quantity,
+                    $product->price,
+                    $product->user->name ?? 'Unknown',
+                    $product->created_at->format('Y-m-d H:i:s')
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'category_id' => 'required|exists:category,id',
+            'quantity' => 'required|integer',
+            'price' => 'required|numeric',
+        ], [
+            'name.required' => 'Nama produk wajib diisi.',
+            'name.max' => 'Nama produk tidak boleh lebih dari 255 karakter.',
+            'quantity.required' => 'Jumlah (kuantitas) produk wajib diisi.',
+            'quantity.integer' => 'Jumlah produk harus berupa angka bulat (tidak boleh desimal).',
+            'price.required' => 'Harga produk wajib diisi.',
+            'price.numeric' => 'Harga produk harus berupa angka yang valid.',
+        ]);
+
+        $validated['user_id'] = Auth::id();
+
+        try {
+            Product::create($validated);
+
+            return redirect()
+                ->route('product.index')
+                ->with('success', 'Product created successfully.');
+
+        } catch (QueryException $e) {
+            Log::error('Product store database error', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Database error while creating product.');
+
+        } catch (\Throwable $e) {
+            Log::error('Product store unexpected error', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Unexpected error occurred.');
+        }
+    }
+
+    public function create()
+    {
+        $users = User::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
+
+        return view('product.create', compact('users', 'categories'));
+    }
+
+    public function show($id)
+    {
+        $product = Product::findOrFail($id);
+
+        return view('product.view', compact('product'));
+    }
+
+    public function update(UpdateProductRequest $request, Product $product)
+    {
+        \Illuminate\Support\Facades\Gate::authorize('update', $product);
+
+        $validated = $request->validated();
+
+        try {
+            $product->update($validated);
+
+            return redirect()
+                ->route('product.index')
+                ->with('success', 'Product updated successfully.');
+
+        } catch (QueryException $e) {
+            Log::error('Product update database error', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Database error while updating product.');
+
+        } catch (\Throwable $e) {
+            Log::error('Product update unexpected error', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Unexpected error occurred.');
+        }
+    }
+
+    public function edit(Product $product)
+    {
+        \Illuminate\Support\Facades\Gate::authorize('update', $product);
+
+        $users = User::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
+
+        return view('product.edit', compact('product', 'users', 'categories'));
+    }
+
+    public function delete(Product $product)
+    {
+        \Illuminate\Support\Facades\Gate::authorize('delete', $product);
+
+        $product->delete();
+
+        return redirect()->route('product.index')->with('success', 'Product berhasil dihapus');
+    }
+}
